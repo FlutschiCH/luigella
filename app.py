@@ -22,18 +22,27 @@ def send_to_discord(file_path, symbol):
         response = requests.post(DISCORD_WEBHOOK_URL, data=payload, files=files)
         print(f"Discord response: {response.status_code} - {response.text}")
 
+def forward_to_make_webhook(webhook_id, data):
+    make_url = f"https://hook.eu2.make.com/{webhook_id}"
+    try:
+        print(f"Forwarding data to Make.com webhook: {make_url}")
+        response = requests.post(make_url, json=data, timeout=10)
+        print(f"Make.com response: {response.status_code} - {response.text}")
+    except requests.exceptions.RequestException as e:
+        print(f"Error forwarding webhook to Make.com: {e}")
+
 @app.route('/')
 def hello_world():
     return 'Hello, World!'
 
-@app.route('/webhook/chart', methods=['POST'])
-def handle_chart_webhook():
+@app.route('/<string:webhook_id>', methods=['POST'])
+def handle_chart_webhook(webhook_id):
     data = request.get_json()
     if not data or 'symbol' not in data:
         return jsonify({"status": "error", "message": "Missing 'symbol' in request body"}), 400
 
     symbol = data['symbol']
-    print(f"Received webhook for symbol: {symbol}")
+    print(f"Received webhook for ID '{webhook_id}' with symbol: {symbol}")
 
     chart_url = f"https://www.tradingview.com/chart/?symbol={symbol}"
 
@@ -43,6 +52,7 @@ def handle_chart_webhook():
 
         if screenshot_path:
             print(f"Screenshot saved to: {screenshot_path}")
+            forward_to_make_webhook(webhook_id, data)
             send_to_discord(screenshot_path, symbol)
             os.remove(screenshot_path)
             return jsonify({"status": "success", "message": f"Screenshot for {symbol} sent to Discord."})
@@ -53,4 +63,4 @@ def handle_chart_webhook():
         return jsonify({"status": "error", "message": f"An error occurred: {e}"}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', debug=True)
