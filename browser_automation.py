@@ -3,9 +3,7 @@ import os
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
@@ -17,11 +15,20 @@ def open_browser_and_press_key(url, *keys_to_press):
     if not os.path.exists(DOWNLOAD_DIR):
         os.makedirs(DOWNLOAD_DIR)
 
+    # --- Configure Chrome Options ---
     chrome_options = Options()
     prefs = {"download.default_directory": DOWNLOAD_DIR}
     chrome_options.add_experimental_option("prefs", prefs)
+    
+    # Add arguments for running in a stable, automated environment
+    chrome_options.add_argument("--no-sandbox") # Bypasses OS security model, required for some environments
+    chrome_options.add_argument("--disable-dev-shm-usage") # Overcomes limited resource problems
+    # chrome_options.add_argument("--headless") # Runs Chrome without a GUI, essential for servers
+    chrome_options.add_argument("--window-size=1920,1080") # Set a window size for headless mode
 
-    driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=chrome_options)
+    # Use the local chromedriver.exe from the project's root folder
+    # This avoids issues with automatic driver downloads.
+    driver = webdriver.Chrome(options=chrome_options)
 
     downloaded_file_path = None
     try:
