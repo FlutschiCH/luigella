@@ -1,46 +1,56 @@
-from flask import Flask, request, redirect, jsonify
+# pip install -r requirements.txt
 
-# Import the function from your other script
+
+from flask import Flask, request, redirect, jsonify
+import requests
+import os
+
 from browser_automation import open_browser_and_press_key
 
-# Create an instance of the Flask class.
-# __name__ is a special Python variable that gives each file a unique name.
+DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/your/webhook_url_here"
+
 app = Flask(__name__)
 
-# This is a "decorator" that turns a regular Python function into a Flask view.
-# It maps the URL path '/' (the root of the site) to the hello_world function.
+def send_to_discord(file_path, symbol):
+    if not file_path or not os.path.exists(file_path):
+        print(f"Error: Screenshot file not found at {file_path}")
+        return
+
+    with open(file_path, 'rb') as f:
+        files = {'file': (os.path.basename(file_path), f, 'image/png')}
+        payload = {'content': f'Chart screenshot for **{symbol}**'}
+        response = requests.post(DISCORD_WEBHOOK_URL, data=payload, files=files)
+        print(f"Discord response: {response.status_code} - {response.text}")
+
 @app.route('/')
 def hello_world():
-    """This view function returns a string to be displayed in the user's browser."""
     return 'Hello, World!'
 
 @app.route('/webhook/chart', methods=['POST'])
 def handle_chart_webhook():
-    """
-    Accepts a POST request with a JSON payload like {"symbol": "AAPL"}.
-    It then opens a browser to a trading chart for that symbol.
-    """
     data = request.get_json()
     if not data or 'symbol' not in data:
-        # Return an error if the JSON is malformed or missing the 'symbol'
         return jsonify({"status": "error", "message": "Missing 'symbol' in request body"}), 400
 
     symbol = data['symbol']
     print(f"Received webhook for symbol: {symbol}")
 
-    # Construct the URL using the symbol from the webhook
-    # I'm using TradingView as an example target site.
     chart_url = f"https://www.tradingview.com/chart/?symbol={symbol}"
 
     try:
-        # Call the browser automation function with the generated URL
-        # For this example, we'll just send the ESCAPE key to close any pop-ups.
         from selenium.webdriver.common.keys import Keys
-        open_browser_and_press_key(chart_url, Keys.ESCAPE)
-        return jsonify({"status": "success", "message": f"Browser automation started for {symbol}"})
-    except Exception as e:
-        return jsonify({"status": "error", "message": f"An error occurred during browser automation: {e}"}), 500
+        screenshot_path = open_browser_and_press_key(chart_url, Keys.CONTROL, Keys.ALT, 's')
 
-# This block ensures the server only runs when the script is executed directly.
+        if screenshot_path:
+            print(f"Screenshot saved to: {screenshot_path}")
+            send_to_discord(screenshot_path, symbol)
+            os.remove(screenshot_path)
+            return jsonify({"status": "success", "message": f"Screenshot for {symbol} sent to Discord."})
+        else:
+            return jsonify({"status": "error", "message": "Failed to download screenshot."}), 500
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"An error occurred: {e}"}), 500
+
 if __name__ == '__main__':
     app.run(debug=True)
