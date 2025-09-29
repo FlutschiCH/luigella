@@ -18,6 +18,7 @@ TEST_DIVERGENCE = "bullish" # Corresponds to "divergenz"
 # If you are running this script on the same machine as the server, 127.0.0.1 is correct.
 # If running from another computer on the same network, replace 127.0.0.1 with the server's local IP address.
 SERVER_ADDRESS = "http://5.147.217.198"
+SERVER_ADDRESS = "http://127.0.0.1:5000"
 # --- End Configuration ---
 
 def send_test_alert():

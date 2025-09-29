@@ -4,10 +4,11 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-DOWNLOAD_DIR = r"D:\Coding\luigella\downloads" # <-- CHANGE THIS PATH
+DOWNLOAD_DIR = r"downloads"  # <-- CHANGE THIS PATH
 
 def open_browser_and_press_key(url, *keys_to_press):
     print("Setting up the Chrome browser...")
@@ -21,14 +22,17 @@ def open_browser_and_press_key(url, *keys_to_press):
     chrome_options.add_experimental_option("prefs", prefs)
     
     # Add arguments for running in a stable, automated environment
-    chrome_options.add_argument("--no-sandbox") # Bypasses OS security model, required for some environments
-    chrome_options.add_argument("--disable-dev-shm-usage") # Overcomes limited resource problems
-    # chrome_options.add_argument("--headless") # Runs Chrome without a GUI, essential for servers
-    chrome_options.add_argument("--window-size=1920,1080") # Set a window size for headless mode
+    chrome_options.add_argument("--no-sandbox")  # Bypasses OS security model
+    chrome_options.add_argument("--disable-dev-shm-usage")  # Overcomes limited resource problems
+    # chrome_options.add_argument("--headless")  # Runs Chrome without a GUI
+    chrome_options.add_argument("--window-size=1920,1080")  # Set window size
 
-    # Use the local chromedriver.exe from the project's root folder
-    # This avoids issues with automatic driver downloads.
-    driver = webdriver.Chrome(options=chrome_options)
+    # Use manually downloaded ChromeDriver from the project root
+    chromedriver_path = os.path.join(os.path.dirname(__file__), "chromedriver" if os.name != "nt" else "chromedriver.exe")
+    if not os.path.exists(chromedriver_path):
+        raise FileNotFoundError(f"ChromeDriver not found at {chromedriver_path}. Please place chromedriver in the project root.")
+    service = ChromeService(executable_path=chromedriver_path)
+    driver = webdriver.Chrome(service=service, options=chrome_options)
 
     downloaded_file_path = None
     try:
