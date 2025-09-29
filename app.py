@@ -95,8 +95,7 @@ def testDiscord():
             print(f"Failed to send Discord message: {e}")
             print(f"Response: {response.text if 'response' in locals() else 'No response'}")
 
-
-testDiscord()
+# testDiscord()
 
 def send_to_discord(file_path, symbol):
     """
