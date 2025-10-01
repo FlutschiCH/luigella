@@ -33,7 +33,7 @@ def send_test_alert():
     else:
         webhook_id = DEFAULT_WEBHOOK_ID
 
-    url = f"{SERVER_ADDRESS}/{webhook_id}"
+    url = f"{SERVER_ADDRESS}"
     
     # Build the payload based on the configuration above
     payload = {
